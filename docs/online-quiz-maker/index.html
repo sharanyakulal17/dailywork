@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Online Quiz Maker</title>
+<style>
+  * { box-sizing: border-box; font-family: Arial, sans-serif; }
+  body { margin: 0; background: #f4f6f8; }
+  header { background: #4f46e5; color: #fff; padding: 15px; text-align: center; }
+  nav button { margin: 5px; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; }
+  nav button:hover { opacity: 0.9; }
+  .container { padding: 20px; max-width: 800px; margin: auto; }
+  .hidden { display: none; }
+  input, select { width: 100%; padding: 8px; margin: 5px 0; }
+  .card { background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+  .option { margin: 5px 0; }
+  .btn { background: #4f46e5; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; }
+  .btn.secondary { background: #6b7280; }
+  @media (max-width: 600px) { header { font-size: 14px; } }
+</style>
+</head>
+<body>
+
+<header>
+<h1>Online Quiz Maker</h1>
+<nav>
+  <button onclick="goHome()">Home</button>
+  <button onclick="showPage('login')">Login</button>
+</nav>
+</header>
+
+<div class="container">
+
+<!-- Home Page -->
+<div id="home" class="card">
+  <h2>Welcome to the Online Quiz Maker!</h2>
+  <p>Login to create your own quizzes or take existing ones.</p>
+</div>
+
+<!-- Dashboard (after login) -->
+<div id="dashboard" class="card hidden">
+  <h2>Quiz Dashboard</h2>
+  <p>Select an option below:</p>
+  <button class="btn" onclick="showPage('create')">Create Quiz</button>
+  <button class="btn secondary" onclick="showPage('list')">Take Quiz</button>
+</div>
+
+<!-- Login -->
+<div id="login" class="card hidden">
+  <h2>User Authentication</h2>
+  <input id="username" placeholder="Enter username" autocomplete="off" />
+  <button class="btn" onclick="login()">Login</button>
+</div>
+
+<!-- Create Quiz -->
+<div id="create" class="card hidden">
+  <h2>Create Quiz</h2>
+  <select id="quizTitle">
+    <option value="">Select Quiz Title</option>
+    <option value="Math Quiz">Math Quiz</option>
+    <option value="Technical Quiz">Technical Quiz</option>
+    <option value="General Knowledge">General Knowledge</option>
+  </select>
+  <div id="questions"></div>
+  <button class="btn secondary" onclick="addQuestion()">Add Question</button>
+  <button class="btn" onclick="saveQuiz()">Save Quiz</button>
+</div>
+
+<!-- Quiz Listing -->
+<div id="list" class="card hidden">
+  <h2>Available Quizzes</h2>
+  <div id="quizList"></div>
+</div>
+
+<!-- Take Quiz -->
+<div id="take" class="card hidden">
+  <h2 id="takeTitle"></h2>
+  <div id="questionBox"></div>
+  <button id="nextBtn" class="btn" onclick="nextQuestion()">Next</button>
+</div>
+
+<!-- Quiz Result -->
+<div id="result" class="card hidden">
+  <h2>Quiz Result</h2>
+  <div id="scoreBanner" style="font-size:24px; font-weight:bold; margin-bottom:15px;"></div>
+  <div id="answers" style="margin-bottom:15px;"></div>
+  <button class="btn" onclick="goHome()">Home</button>
+</div>
+
+</div>
+
+<script>
+// Start fresh
+localStorage.removeItem('quizzes');
+
+let currentUser = null;
+let quizzes = [];
+let currentQuiz = null;
+let qIndex = 0;
+let score = 0;
+
+function showPage(id) {
+  document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+  if (id === 'list') loadQuizList();
+}
+
+function goHome() { showPage('home'); }
+
+function login() {
+  const user = document.getElementById('username').value.trim();
+  if (!user) { alert('Enter username'); return; }
+  currentUser = user;
+  document.getElementById('username').value = '';
+  showPage('dashboard');
+}
+
+function addQuestion() {
+  const qDiv = document.getElementById('questions');
+  const selectedTitle = document.getElementById('quizTitle').value;
+  if (!selectedTitle) { alert('Select a quiz title first'); return; }
+  if (qDiv.children.length >= 5) { alert('Only 5 questions allowed'); return; }
+
+  const div = document.createElement('div');
+  div.className = 'card';
+  div.innerHTML = `
+    <input placeholder="Question" class="q" />
+    <input placeholder="Option A" class="opt" />
+    <input placeholder="Option B" class="opt" />
+    <input placeholder="Option C" class="opt" />
+    <input placeholder="Option D" class="opt" />
+    <select class="ans">
+      <option value="0">A</option>
+      <option value="1">B</option>
+      <option value="2">C</option>
+      <option value="3">D</option>
+    </select>
+  `;
+  qDiv.appendChild(div);
+}
+
+function saveQuiz() {
+  const title = document.getElementById('quizTitle').value;
+  const qDivs = document.querySelectorAll('#questions .card');
+  if (!title || qDivs.length === 0) { alert('Add title and questions'); return; }
+
+  const questions = [...qDivs].map(div => ({
+    text: div.querySelector('.q').value,
+    options: [...div.querySelectorAll('.opt')].map(o => o.value),
+    answer: parseInt(div.querySelector('.ans').value)
+  }));
+
+  quizzes.push({ title, questions });
+  alert('Quiz Saved!');
+  document.getElementById('questions').innerHTML = '';
+  document.getElementById('quizTitle').value = '';
+}
+
+function loadQuizList() {
+  const list = document.getElementById('quizList');
+  list.innerHTML = '';
+  quizzes.forEach((q, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'btn';
+    btn.innerText = q.title;
+    btn.onclick = () => startQuiz(i);
+    list.appendChild(btn);
+  });
+}
+
+function startQuiz(i) {
+  currentQuiz = quizzes[i];
+  qIndex = 0;
+  score = 0;
+  showPage('take');
+  document.getElementById('takeTitle').innerText = currentQuiz.title;
+  loadQuestion();
+}
+
+function loadQuestion() {
+  const q = currentQuiz.questions[qIndex];
+  const box = document.getElementById('questionBox');
+  box.innerHTML = `<p><b>Q${qIndex+1}:</b> ${q.text}</p>` + q.options.map((o, i) => `
+    <div class="option">
+      <input type="radio" name="opt" value="${i}" /> ${o}
+    </div>`).join('');
+
+  // Change Next button to Submit on last question
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.innerText = (qIndex === currentQuiz.questions.length - 1) ? 'Submit' : 'Next';
+}
+
+function nextQuestion() {
+  const selected = document.querySelector('input[name="opt"]:checked');
+  if (!selected) { alert('Select an option'); return; }
+  if (parseInt(selected.value) === currentQuiz.questions[qIndex].answer) score++;
+  qIndex++;
+  if (qIndex < currentQuiz.questions.length) loadQuestion();
+  else showResult();
+}
+
+function showResult() {
+  showPage('result');
+  const scorePercent = Math.round((score / currentQuiz.questions.length) * 100);
+  const scoreBanner = document.getElementById('scoreBanner');
+  let color = scorePercent >= 70 ? 'green' : scorePercent >= 40 ? 'orange' : 'red';
+  scoreBanner.innerText = `You scored ${score} / ${currentQuiz.questions.length} (${scorePercent}%)`;
+  scoreBanner.style.color = color;
+
+  const answersDiv = document.getElementById('answers');
+  answersDiv.innerHTML = '';
+  currentQuiz.questions.forEach((q, idx) => {
+    const questionDiv = document.createElement('div');
+    questionDiv.className = 'card';
+    questionDiv.style.backgroundColor = '#f9f9f9';
+    questionDiv.style.border = '1px solid #ccc';
+    questionDiv.style.padding = '10px';
+    questionDiv.innerHTML = `
+      <p><b>Q${idx+1}:</b> ${q.text}</p>
+      <p><b>Correct Answer:</b> ${q.options[q.answer]}</p>
+    `;
+    answersDiv.appendChild(questionDiv);
+  });
+}
+
+// Show Home on page load
+showPage('home');
+</script>
+
+</body>
+</html>
