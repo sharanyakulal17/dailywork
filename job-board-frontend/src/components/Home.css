@@ -1,0 +1,80 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+}
+
+/* Navbar */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  padding: 15px 40px;
+  background: #1976d2;
+  color: white;
+}
+
+.logo {
+  margin: 0;
+}
+
+.nav-links {
+  list-style: none;
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.nav-links li {
+  cursor: pointer;
+}
+
+.post {
+  background: #2ecc71;
+  padding: 8px 12px;
+  border-radius: 5px;
+}
+
+/* Hero */
+.hero {
+  background: #1e88e5;
+  color: white;
+  padding: 60px 40px;
+}
+
+.hero h1 {
+  font-size: 40px;
+}
+
+.count {
+  font-weight: bold;
+}
+
+.btn {
+  background: #2ecc71;
+  border: none;
+  padding: 12px 20px;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+/* Search */
+.search {
+  display: flex;
+  gap: 10px;
+  padding: 20px;
+  justify-content: center;
+}
+
+.search input {
+  padding: 10px;
+  width: 200px;
+}
+
+.search button {
+  padding: 10px 20px;
+  background: #2ecc71;
+  border: none;
+  color: white;
+  cursor: pointer;
+}
